@@ -1,5 +1,13 @@
 {
     "files.associations": {
-        "xiosbase": "cpp"
+        "xiosbase": "cpp",
+        "format": "cpp",
+        "istream": "cpp",
+        "memory": "cpp",
+        "type_traits": "cpp",
+        "xlocmes": "cpp",
+        "xlocmon": "cpp",
+        "xlocnum": "cpp",
+        "xloctime": "cpp"
     }
 }
