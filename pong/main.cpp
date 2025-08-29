@@ -11,6 +11,7 @@ public:
         centerY += bs.y;
         DrawCircle(centerX, centerY, radius, WHITE);
     }
+    Vector2 getPosition(){return {centerX, centerY};}
     void reverseX(){
         bs.x *= -1;
     }
@@ -58,7 +59,8 @@ public:
             }
         }
     }
-
+    Vector2 getMovSpe(){return ms;}
+    Vector2 getPosition(){return {(float) posX,(float) posY};}
     Rectangle getRect(){
         return Rectangle{(float) posX, (float) posY, (float) width, (float) height};
     }
@@ -76,8 +78,16 @@ private:
     Vector2 ms;
 };
 
-class enemy : paddle{
-
+class enemy : public paddle{
+public:
+    enemy(int posX, int poxY, int width, int height, Color color, Vector2 ms):
+    paddle(posX, poxY, width, height, color, ms){}
+    void Move(Ball& ball){
+        if (ball.getPosition().y > getPosition().y){}
+    }
+private:
+    
+    
 };
 
 
