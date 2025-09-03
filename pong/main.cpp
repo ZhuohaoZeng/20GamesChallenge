@@ -1,6 +1,18 @@
 #include <iostream>
 #include "include/raylib.h"
 #include <string>
+
+struct Bounds
+{
+    int w, h;
+};
+
+struct Input
+{
+    bool up{};
+    bool down{};
+};
+
 //----Below should be in the header files, but I didn't because I am lazy --------
 class Ball;
 class paddle; 
@@ -56,22 +68,7 @@ class paddle{
 public:
     paddle(int posX, int poxY, int width, int height, Color color, Vector2 ms): 
           posX(posX), posY(poxY), width(width), height(height), color(color), ms(ms){}
-    void isMove(){
-        // std::cout << posY << std::endl;
-        if (IsKeyDown(KEY_UP)){
-            posY -= ms.y;
-            if (posY < 0){
-                posY = 0;
-            }
-            
-        }
-        if (IsKeyDown(KEY_DOWN)){
-            posY += ms.y;
-            if (posY > 620){
-                posY = 620;
-            }
-        }
-    }
+    Color getColor() const {return color;}
     Vector2 getMovSpe() const{return ms;}
     Vector2 getPosition() const{return {(float) posX,(float) posY};}
     void setY(float posY){this->posY = posY;}
@@ -80,13 +77,14 @@ public:
         posX = position.x;
         posY = position.y;
     }
-    Rectangle getRect(){
-        return Rectangle{(float) posX, (float) posY, (float) width, (float) height};
+    void moveBy(float ms, float my) {posX += ms; posY+= my;}
+    void clampY(int minY, int maxY)
+    {
+        if (posY < minY) posY = minY;
+        if (posY > maxY) posY = maxY;
     }
-
-    void Draw(){
-        isMove();
-        DrawRectangle(posX, posY, width, height, color);
+    Rectangle getRect() const{
+        return Rectangle{(float) posX, (float) posY, (float) width, (float) height};
     }
 private:
     int posX;
@@ -96,6 +94,20 @@ private:
     Color color;
     Vector2 ms;
 };
+//non-member nonfriend paddle function
+void updatePaddle(paddle& p, const Input& i, const Bounds& b)
+{
+    if (i.up) p.moveBy(0, -p.getMovSpe().y);
+    if (i.down) p.moveBy(0, p.getMovSpe().y);
+    p.clampY(0, 620);
+    return;
+};
+
+void draw(const paddle& p)
+{
+    Rectangle r = p.getRect();
+    DrawRectangleRec(r, p.getColor());
+}
 
 class enemy : public paddle{
 public:
