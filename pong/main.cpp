@@ -19,31 +19,22 @@ class paddle;
 //----End of the header --------
 class Ball{
 public:
-    Ball(float x, float y, float r, Color c, Vector2 ballSpeed): 
-        centerX(x), initX(x), centerY(y), initY(y), radius(r), color(c), bs(ballSpeed){}
-    void Move(){
-        bounceCheck();
-        centerX += bs.x;
-        centerY += bs.y;
-        DrawCircle(centerX, centerY, radius, WHITE);
-    }
-    void respond() {
-        centerX = initX;
-        centerY = initY;
-    }
-    Vector2 getPosition(){return {centerX, centerY};}
-    void reverseX(){
-        bs.x *= -1;
-    }
-    void reverseY(){
-        bs.y *= -1;
-    }
-    bool scoreCheck(const paddle& p);
+    Ball(float x, float y, float r, Color c, Vector2 bs): 
+        centerX(x), initX(x), centerY(y), initY(y), radius(r), color(c), ballSpeed(bs){}
+    
+    Vector2 getPosition() const {return {centerX, centerY};}
+    Rectangle getRect() const {return Rectangle{centerX - radius, centerY - radius, 2 * radius, 2 * radius};}
+    float getRadius() const {return radius;}
+    Color getColor() const {return color;}
+    Vector2 getSpeed() const {return ballSpeed;}
+    void reflectX() {ballSpeed.x *= -1;}
+    void reflectY() {ballSpeed.y *= -1;}
+    void moveBy(float ms, float my) {centerX += ms; centerY+= my;}
+    void respond() {centerX = initX; centerY = initY;}
 
-    Rectangle getRect()
-    {
-        return Rectangle{centerX - radius, centerY - radius, 2 * radius, 2 * radius};
-    }
+    // bool scoreCheck(const paddle& p);
+
+    
 private:
     float initX;
     float initY;
@@ -51,17 +42,7 @@ private:
     float centerY;
     float radius;
     Color color;
-    Vector2 bs;
-    void bounceCheck()
-    {
-        if(centerY < 0 || centerY > 720){
-            bs.y *= -1;
-        }
-        if (centerX < 0 || centerX > 1280){
-            bs.x *= -1;
-            respond();
-        }
-    }
+    Vector2 ballSpeed;
 };
 
 class paddle{
@@ -94,20 +75,6 @@ private:
     Color color;
     Vector2 ms;
 };
-//non-member nonfriend paddle function
-void updatePaddle(paddle& p, const Input& i, const Bounds& b)
-{
-    if (i.up) p.moveBy(0, -p.getMovSpe().y);
-    if (i.down) p.moveBy(0, p.getMovSpe().y);
-    p.clampY(0, 620);
-    return;
-};
-
-void draw(const paddle& p)
-{
-    Rectangle r = p.getRect();
-    DrawRectangleRec(r, p.getColor());
-}
 
 class enemy : public paddle{
 public:
@@ -122,44 +89,81 @@ public:
         {
             setY(getPosition().y - getMovSpe().y);
         }
-        Draw();
     }
 private:
     
     
 };
 
+
+void update(Ball& ball, const paddle& p, const Bounds& bounds)
+{
+    Vector2 ballP = ball.getPosition();
+    
+    if(ballP.y < 0 || ballP.y > bounds.h){
+        ball.reflectY();
+    }
+    if (CheckCollisionRecs(p.getRect(), ball.getRect()))
+    {
+        ball.reflectX();
+    }
+    else if (ballP.x < 0 || ballP.x> bounds.w){
+        ball.reflectX();
+        ball.respond();
+    }
+    ball.moveBy(ball.getSpeed().x, ball.getSpeed().y);
+    
+}
+// balls non-member method
+void draw(const Ball& b)
+{
+    auto [centerX, centerY] = b.getPosition();
+    DrawCircle(centerX, centerY, b.getRadius(), b.getColor());
+}
+
+//non-member nonfriend paddle function
+void update(paddle& p, const Input& i, const Bounds& b)
+{
+    if (i.up) p.moveBy(0, -p.getMovSpe().y);
+    if (i.down) p.moveBy(0, p.getMovSpe().y);
+    p.clampY(0, 620);
+    return;
+};
+// paddles non-member method
+void draw(const paddle& p)
+{
+    Rectangle r = p.getRect();
+    DrawRectangleRec(r, p.getColor());
+}
+
 int main(void)
 {
     int player_score;
     int enemy_score;
-    int width = 1280;
-    int height = 720;
-    Vector2 ballSpeed{ 6.0f, 5.0f };
-    Ball ball{(float) width / 2, (float) height / 2, 30, WHITE, ballSpeed};
-    paddle player{70, height/2, 30, 100, WHITE, {0, 4.0f}};
-    enemy enemy{1200, height/2, 30, 100, WHITE, {0, 4.0f}};
-    InitWindow(width, height, "A new Winodw");
+    Bounds bounds{1280, 720};
+    Vector2 ballSpeed{ 3.0f, 2.0f };
+    Ball ball{(float) bounds.w / 2, (float) bounds.h / 2, 30, WHITE, ballSpeed};
+    paddle player{70, bounds.h/2, 30, 100, WHITE, {0, 4.0f}};
+    enemy enemy{1200, bounds.h/2, 30, 100, WHITE, {0, 4.0f}};
+    InitWindow(bounds.w, bounds.h, "A new Winodw");
     SetTargetFPS(120); 
+    //Main Game Loop
     while(!WindowShouldClose())
     {
+        Input in{IsKeyDown(KEY_UP), IsKeyDown(KEY_DOWN)};
         BeginDrawing();
         ClearBackground(BLACK);
-        player.Draw();
-        ball.Move();
+        update(player, in, bounds);
+        draw(player);
+        update(ball, player, bounds);
+        update(ball, enemy, bounds);
+        draw(ball);
         enemy.Move(ball);
-        if (CheckCollisionRecs(player.getRect(), ball.getRect()))
-        {
-            ball.reverseX();
-        }
-        if (CheckCollisionRecs(enemy.getRect(), ball.getRect()))
-        {
-            ball.reverseX();
-        }
+        draw(enemy);
         // if (ball.scoreCheck(player)) ++player_score;
         // if (ball.scoreCheck(enemy)) ++enemy_score;
-        DrawText(TextFormat("%d", player_score), width/2, height/2, 20, WHITE);
-        DrawLine(width/2, 0,width/2, height, WHITE);
+        // DrawText(TextFormat("%d", player_score), bounds.w/2, bounds.h/2, 20, WHITE);
+        DrawLine(bounds.w/2, 0,bounds.w/2, bounds.h, WHITE);
         EndDrawing();
     }
     CloseWindow();
