@@ -51,14 +51,13 @@ public:
     float getRadius() const {return radius;}
     Color getColor() const {return color;}
     Vector2 getSpeed() const {return ballSpeed;}
-    void reflectX() {ballSpeed.x *= -1.01;}
+    void reflectX() {ballSpeed.x *= -1;}
     void reflectY() {ballSpeed.y *= -1;}
     void moveBy(float ms, float my) {centerX += ms; centerY+= my;}
     void respond() 
     {
         centerX = initX; centerY = initY; 
-        float theta = GetRandomValue(-45, 45) * DEG2RAD;
-        ballSpeed = Vector2{intialBallSpeed.x * std::cos(theta), intialBallSpeed.y * std::sin(theta)};
+        reflectX();
     }
     void reset()
     {
@@ -200,22 +199,29 @@ void draw(const paddle& p)
 
 int main(void)
 {
+    bool pause{true};
     Score score{};
     Bounds bounds{1280, 720};
-    Vector2 ballSpeed{ 3.0f, 2.0f };
+    Vector2 ballSpeed{ 3.0f, -2.0f };
     Ball ball{(float) bounds.w / 2, (float) bounds.h / 2, 30, WHITE, ballSpeed};
     paddle player{70, bounds.h/2, 30, 100, WHITE, {0, 4.0f}};
     player.setController(std::make_unique<PlayerController>(player));
-    paddle enemy{1200, bounds.h/2, 30, 100, WHITE, {0, 2.0f}};
+    paddle enemy{1200, bounds.h/2, 30, 100, WHITE, {0, 3.0f}};
     enemy.setController(std::make_unique<EnemyController>(enemy, ball));
     InitWindow(bounds.w, bounds.h, "A new Winodw");
     SetTargetFPS(120); 
     //Main Game Loop
     while(!WindowShouldClose())
     {
-        if (IsKeyDown(KEY_R)){score.reset(), ball.reset();}
         BeginDrawing();
         ClearBackground(BLACK);
+        if(pause) 
+        {
+            if (IsKeyDown(KEY_SPACE)) pause = false;
+            EndDrawing();
+            continue;
+        }
+        if (IsKeyDown(KEY_R)){score.reset(), ball.reset();}
         player.move();
         draw(player);
         checkCollision(ball, player, bounds, &score);
