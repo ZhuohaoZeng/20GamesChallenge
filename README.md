@@ -5,3 +5,4 @@ This project is aimed to understand how is a game builded from the very basic an
 ## Features
 - UpArrowKey, DownArrowKey - Control the paddle on the left
 - Rendering, with Raylib 
+- Used OOP patterns：Strategy，GameLoop 
